@@ -1,11 +1,82 @@
 @()
 
 @main("D3Test") {
+    <style>
+
+    #control-pane {
+      top: 10px;
+      /*bottom: 10px;*/
+      right: 10px;
+      position: absolute;
+      width: 230px;
+      background-color: rgb(249, 247, 237);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    #control-pane > div {
+      margin: 10px;
+      overflow-x: auto;
+    }
+    .line {
+      clear: both;
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 12px 0 0 0;
+      border-bottom: 1px solid #aac789;
+      background: transparent;
+    }
+    h2, h3, h4 {
+      padding: 0;
+      font-variant: small-caps;
+    }
+    .green {
+      color: #437356;
+    }
+    h2.underline {
+      color: #437356;
+      background: #f4f0e4;
+      margin: 0;
+      border-radius: 2px;
+      padding: 8px 12px;
+      font-weight: 700;
+    }
+    label{
+      font-family: "Arial","Microsoft YaHei", sans-serif;
+      font-size: 14px;
+    }
+    </style>
   <div id="graphDiv"></div>
+  <div id="control-pane">
+    <h2 class="underline">filters</h2>
+    <div>
+      <input type="checkbox" id="isTagShow">
+      <label for="">显示标签</label>
+    </div>
+    <div>
+      <h3>node category</h3>
+      <select id="node-category">
+        <option value="" selected>All categories</option>
+
+      </select>
+    </div>
+    <span class="line"></span>
+    <div>
+      <button id="reset-btn">Reset filters</button>
+      <button id="select-btn">Cancel Selection</button>
+    </div>
+    <div id="dump" class="hidden"></div>
+  </div>
+
 
 <script>
 
+
+
+        var aaa = JSON.parse('{"nodes":[{"id":78},{"id":556},{"id":531}],"edges":[{"source":78,"target":556},{"source":556,"target":531}]}');
+        console.log(aaa)
+
         var radius = 5;
+        var size = 8;
   var color = d3.scaleOrdinal(d3.schemeCategory10);
   var wheight = window.innerHeight;
   var graphWidth =  window.innerWidth;
@@ -20,27 +91,33 @@
     height = canvas.height;
 
 
+
+
   var simulation = d3.forceSimulation()
     .force("link", d3.forceLink().id(function(d) {
-      console.log(d)
       return d.id;
     }).distance(250).strength(0.3))
     .force("charge", d3.forceManyBody())
     .force("center", d3.forceCenter(width / 2, height / 2));
 
   var transform = d3.zoomIdentity;
+  //transform.k = 1.5;
+
+  console.log(transform)
 
 
   d3.json("/names").then(function(graph) {
-    console.log(graph);
+    //console.log(graph);
+    //add
     simulation
       .nodes(graph.nodes)
       .on("tick", simulationUpdate);
 
-
     simulation.force("link")
       .links(graph.links);
 
+      var zoom = d3.zoom().scaleExtent([1, 8])
+              .on("zoom", zoomed);
 
     d3.select(canvas)
       .call(d3.drag()
@@ -49,12 +126,13 @@
         .on("start", dragstarted)
         .on("drag", dragged)
         .on("end", dragended))
-            .call(d3.zoom().scaleExtent([1 / 10, 8]).on("zoom", zoomed));
+            .call(zoom);
+      //  .call(d3.zoom().scaleExtent([1, 8]).on("zoom", zoomed));
 
 
 
     function zoomed() {
-      console.log("zooming")
+
       transform = d3.event.transform;
       simulationUpdate();
     }
@@ -66,31 +144,12 @@
       context.translate(transform.x, transform.y);
       context.scale(transform.k, transform.k);
 
-      context.beginPath();
       graph.links.forEach(drawLink);
-      context.strokeStyle = "#aaa";
-      context.stroke();
-      /*
-      graph.edges.forEach(function(d) {
-        context.beginPath();
-        context.moveTo(d.source.x, d.source.y);
-        context.lineTo(d.target.x, d.target.y);
-        context.stroke();
-      });*/
 
       // Draw the nodes
       graph.nodes.forEach(drawNode);
-      /*
-      graph.nodes.forEach(function(d, i) {
-
-        context.beginPath();
-        context.arc(d.x, d.y, radius, 0, 2 * Math.PI, true);
-        context.fillStyle = d.col ? "red":"black"
-        context.fill();
-      });*/
 
       context.restore();
-//        transform = d3.zoomIdentity;
     }
 
     function ticked() {
@@ -153,23 +212,51 @@
 
 
   function drawLink(d) {
+    context.beginPath();
     context.moveTo(d.source.x, d.source.y);
     context.lineTo(d.target.x, d.target.y);
+    context.strokeStyle = "#aaa";
+    context.stroke();
   }
 
 
   function drawNode(d) {
 
     context.beginPath();
-    context.moveTo(d.x + 3, d.y);
-    context.arc(d.x, d.y, 10, 0, 2 * Math.PI);
-    context.fillText(d.id, d.x+10, d.y+3);
     context.fillStyle = color(d.group % 10);
+    //context.moveTo(d.x, d.y);
+    context.arc(d.x, d.y, size, 0, 2 * Math.PI);
+    context.fillText(d.id, d.x+10, d.y+3);
+
     //console.log();
     //context.strokeStyle = color(d.group);
     context.fill();
     context.stroke();
   }
 
+        document.getElementById("select-btn").addEventListener('click', ev => {
+
+          simulation
+            .nodes(aaa.nodes)
+            .on("tick", function () {
+                context.clearRect(0, 0, width, height);
+                //context.beginPath();
+               // aaa.links.forEach(drawLink);
+                //context.strokeStyle = "#aaa";
+                //context.stroke();
+                aaa.nodes.forEach(drawNode);
+            });
+
+
+          var zoom = d3.zoom().scaleExtent([1, 8])
+            .on("zoom", function () {
+            console.log("aa")
+          });
+
+          d3.select(canvas).call(zoom)
+
+        });
+
 </script>
+
 }
