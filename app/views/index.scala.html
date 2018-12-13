@@ -75,7 +75,7 @@
         var aaa = JSON.parse('{"nodes":[{"id":78},{"id":556},{"id":531}],"edges":[{"source":78,"target":556},{"source":556,"target":531}]}');
         console.log(aaa)
 
-        var radius = 5;
+        var radius = 4;
         var size = 8;
   var color = d3.scaleOrdinal(d3.schemeCategory10);
   var wheight = window.innerHeight;
@@ -91,24 +91,29 @@
     height = canvas.height;
 
 
+        var _clickNode = null;
 
 
   var simulation = d3.forceSimulation()
     .force("link", d3.forceLink().id(function(d) {
       return d.id;
-    }).distance(250).strength(0.3))
+    }))
     .force("charge", d3.forceManyBody())
     .force("center", d3.forceCenter(width / 2, height / 2));
 
   var transform = d3.zoomIdentity;
   //transform.k = 1.5;
 
-  console.log(transform)
+  console.log(transform);
+
+
 
 
   d3.json("/names").then(function(graph) {
     //console.log(graph);
     //add
+
+    console.log(typeof _clickNode)
     simulation
       .nodes(graph.nodes)
       .on("tick", simulationUpdate);
@@ -127,6 +132,8 @@
         .on("drag", dragged)
         .on("end", dragended))
             .call(zoom);
+    d3.select(canvas)
+            .on('click', helloMouseMove);
       //  .call(d3.zoom().scaleExtent([1, 8]).on("zoom", zoomed));
 
 
@@ -165,6 +172,28 @@
 
     }
 
+    function f() {
+
+      //console.log(d3.event.x);
+      //console.log(d3.mouse(this));
+      /*
+      var i,
+              x = transform.invertX(d3.event.x),
+              y = transform.invertY(d3.event.y),
+              dx,
+              dy;
+      for (i = graph.nodes.length - 1; i >= 0; --i) {
+        node = graph.nodes[i];
+        dx = x - node.x;
+        dy = y - node.y;
+
+        if (dx * dx + dy * dy < radius * radius) {
+
+          return node;
+        }
+      }*/
+      return simulation.find(transform.invertX(d3.event.x), transform.invertY(d3.event.y), 10);
+    }
     function dragsubject() {
       var i,
               x = transform.invertX(d3.event.x),
@@ -185,6 +214,51 @@
         }
       }
       //return simulation.find(d3.event.x, d3.event.y);
+    }
+
+
+    function helloMouseMove(){
+
+
+      //var  = null;
+      var _clickNode = f();
+
+      //console.log(_clickNode)
+
+      if(typeof _clickNode !== "undefined" ){
+        console.log(_clickNode);
+        //simulation.stop();
+
+        context.save();
+
+        context.clearRect(0, 0, graphWidth, height);
+        context.translate(transform.x, transform.y);
+        context.scale(transform.k, transform.k);
+
+
+        graph.nodes.forEach(drawNode);
+
+        /*
+
+
+
+
+
+        context.clearRect(0, 0, width, height);
+        context.beginPath();
+        context.fillStyle = '#000000';
+        //context.moveTo(d.x, d.y);
+        context.arc(node.x, node.y, size, 0, 2 * Math.PI);
+        context.fillText(node.id, node.x+10, node.y+3);
+
+        //console.log();
+        //context.strokeStyle = color(d.group);
+        context.fill();
+        context.stroke();
+
+        */context.restore();
+      }
+
     }
 
   });
@@ -223,7 +297,12 @@
   function drawNode(d) {
 
     context.beginPath();
-    context.fillStyle = color(d.group % 10);
+    //console.log(_clickNode)
+
+    if( _clickNode != null)
+      context.fillStyle = '#000000';
+    else
+      context.fillStyle = color(d.group % 10);
     //context.moveTo(d.x, d.y);
     context.arc(d.x, d.y, size, 0, 2 * Math.PI);
     context.fillText(d.id, d.x+10, d.y+3);
@@ -234,28 +313,7 @@
     context.stroke();
   }
 
-        document.getElementById("select-btn").addEventListener('click', ev => {
 
-          simulation
-            .nodes(aaa.nodes)
-            .on("tick", function () {
-                context.clearRect(0, 0, width, height);
-                //context.beginPath();
-               // aaa.links.forEach(drawLink);
-                //context.strokeStyle = "#aaa";
-                //context.stroke();
-                aaa.nodes.forEach(drawNode);
-            });
-
-
-          var zoom = d3.zoom().scaleExtent([1, 8])
-            .on("zoom", function () {
-            console.log("aa")
-          });
-
-          d3.select(canvas).call(zoom)
-
-        });
 
 </script>
 

@@ -38,6 +38,12 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
     Ok(bbb)
   }
 
+  def test() = Action{
+
+    Ok(views.html.test())
+
+  }
+
   def name() = Action{
 
     val aaa: JsValue = Json.parse(
