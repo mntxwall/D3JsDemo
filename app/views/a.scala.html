@@ -5,19 +5,14 @@
 <script src="@routes.Assets.versioned("javascripts/konva.min.js")" type="text/javascript"></script>
 <script>
 
-var wheight = window.innerHeight;
-var graphWidth =  window.innerWidth;
+var width = 960;
+var height = 600;
 
 var stage = new Konva.Stage({
     container: 'konva-container',   // id of container <div>
-    width: graphWidth,
-    height: wheight,
-    draggable: true
+    width: width,
+    height: height
 });
-
-//var width = wheight,
-//        height = graphWidth;
-
 
 var linkLayer = new Konva.Layer();
 stage.add(linkLayer);
@@ -26,23 +21,15 @@ stage.add(nodeLayer);
 var dragLayer = new Konva.Layer();
 stage.add(dragLayer);
 
-var width = stage.attrs.width,
-        height = stage.attrs.height;
-
-//console.log(stage);
-
-//var color = d3.scaleOrdinal(d3.schemeCategory20);
-var color = d3.scaleOrdinal(d3.schemeCategory10);
-
-var transform = d3.zoomIdentity;
+var color = d3.scaleOrdinal(d3.schemeCategory20);
 
 var simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.id; }))
         .force("charge", d3.forceManyBody())
         .force("center", d3.forceCenter(width / 2, height / 2));
 
-
-d3.json("/names").then(function(graph) {
+d3.json("miserables.json", function(error, graph) {
+    if (error) throw error;
 
     simulation
             .nodes(graph.nodes)
@@ -51,29 +38,10 @@ d3.json("/names").then(function(graph) {
     simulation.force("link")
             .links(graph.links);
 
-    /*var zoom = d3.zoom().scaleExtent([1/5, 8])
-            .on("zoom", zoomed);*/
-
-    //console.log(d3.select(nodeLayer));
-
-    var zoom = d3.zoom().scaleExtent([1, 8])
-            .on("zoom", zoomed);
-
-    //d3.select(nodeLayer).call(zoom, zoomed);
-
-
-    function zoomed() {
-
-        transform = d3.event.transform;
-        //simulationUpdate();
-    }
-
-    graph.links.forEach(createKLink);
-    linkLayer.draw();
     graph.nodes.forEach(createKNode);
     nodeLayer.draw();
-
-    //stage.moveTo(nodeLayer);
+    graph.links.forEach(createKLink);
+    linkLayer.draw();
 
     function ticked() {
         graph.links.forEach(moveKLink);
@@ -84,7 +52,7 @@ d3.json("/names").then(function(graph) {
     }
 
 });
-/*
+
 function dragstarted() {
     if (!d3.event.active) simulation.alphaTarget(0.3).restart();
     d3.event.subject.fx = d3.event.subject.x;
@@ -102,21 +70,20 @@ function dragended() {
     d3.event.subject.fx = null;
     d3.event.subject.fy = null;
     lower(kNodeFor(d3.event.subject))
-}*/
+}
 
 function createKNode(d) {
     var circle = new Konva.Circle({
         id: d.id,
         x: d.x,
         y: d.y,
-        radius: 8,
+        radius: 4,
         fill: color(d.group),
-        stroke:  "#aaa",
-    draggable: true,
+        draggable: true,
         d: d
     });
     circle.on('dragstart', function(e) {
-        //this.moveTo(dragLayer);
+        this.moveTo(dragLayer);
         this.attrs.d.fx = this.attrs.d.x;
         this.attrs.d.fy = this.attrs.d.y;
     });
@@ -125,19 +92,11 @@ function createKNode(d) {
         this.attrs.d.fy = this.attrs.y;
     });
     circle.on('dragend', function(e) {
-        //this.moveTo(nodeLayer);
-        //dragLayer.clear();
+        this.moveTo(nodeLayer);
+        dragLayer.clear();
         this.attrs.d.fx = null;
         this.attrs.d.fy = null;
         simulation.alphaTarget(0.3).restart();
-    });
-    circle.on('click', function () {
-        console.log('click circle');
-        //circle.fill = '#000000';
-        //var fill = this.fill() == 'red' ? '#00d00f' : 'red';
-        //var fill = ;
-        this.fill('#000000');
-        nodeLayer.draw();
     });
 
     nodeLayer.add(circle);
@@ -167,12 +126,11 @@ function createKLink(d) {
         lineJoin: 'round'
     });
     linkLayer.add(line);
-    //nodeLayer.add(line);
 }
 
 function moveKNode(d) {
     var circle = kNodeFor(d);
-    if (typeof circle !== "undefined")
+    if (circle != undefined)
     {
         circle.position({
             x: d.x,
@@ -195,35 +153,12 @@ function lower(shape) {
 
 function moveKLink(d) {
     var line = linkLayer.findOne('#' + linkIdentity(d));
-    //var line = nodeLayer.findOne('#' + linkIdentity(d));
 
     line.points([
         d.source.x, d.source.y,
         d.target.x, d.target.y
     ])
 }
-var scaleBy = 1.2;
-
-window.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    var oldScale = stage.scaleX();
-
-    var mousePointTo = {
-        x: stage.getPointerPosition().x / oldScale - stage.x() / oldScale,
-        y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale,
-    };
-
-    var newScale = e.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
-    stage.scale({ x: newScale, y: newScale });
-
-    var newPos = {
-        x: -(mousePointTo.x - stage.getPointerPosition().x / newScale) * newScale,
-        y: -(mousePointTo.y - stage.getPointerPosition().y / newScale) * newScale
-    };
-    stage.position(newPos);
-    stage.batchDraw();
-});
-
 </script>
 
 
