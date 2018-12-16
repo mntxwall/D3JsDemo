@@ -40,7 +40,7 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
 
   def test() = Action{
 
-    Ok(views.html.sigma())
+    Ok(views.html.test())
 
   }
 

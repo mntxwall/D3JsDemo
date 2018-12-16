@@ -30,7 +30,8 @@
       },
       settings:{
           defaultNodeColor:'#ec5148',
-          labelThreshold: 8
+          labelThreshold: 8,
+          autoRescale: false
       }
   });
 
@@ -76,7 +77,6 @@
 
       s.refresh();
 
-      s.settings('autoRescale', false);
 
       sigma.plugins.dragNodes(s, s.renderers[0]);
 
@@ -99,6 +99,8 @@
       function ticked() {
         //console.log(s.graph.nodes())
           //if (g.nodes)
+/*
+          console.log(s);
           g.nodes.forEach(function (d) {
               if (s.graph.nodes(d.id))
                 s.graph.dropNode(d.id);
@@ -113,10 +115,12 @@
           });
           g.edges.forEach(function (d) {
               s.graph.addEdge(d)
-          })
+          })*/
 
-          console.log(s.graph)
-          s.refresh()
+         // console.log(s.graph);
+          //s.kill();
+
+          //s.refresh()
 
       }
 /*

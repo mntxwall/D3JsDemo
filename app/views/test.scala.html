@@ -76,6 +76,8 @@ d3.json("/names").then(function(graph) {
     //stage.moveTo(nodeLayer);
 
     function ticked() {
+
+      //console.log(nodeLayer);
         graph.links.forEach(moveKLink);
         linkLayer.draw();
 
