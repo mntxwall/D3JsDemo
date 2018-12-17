@@ -8,6 +8,9 @@
 var wheight = window.innerHeight;
 var graphWidth =  window.innerWidth;
 
+var clickNodeList = Array();
+var clickLinkList = Array();
+
 var stage = new Konva.Stage({
     container: 'konva-container',   // id of container <div>
     width: graphWidth,
@@ -121,6 +124,7 @@ function createKNode(d) {
         //this.moveTo(dragLayer);
         this.attrs.d.fx = this.attrs.d.x;
         this.attrs.d.fy = this.attrs.d.y;
+        //console.log(clickList)
     });
     circle.on('dragmove', function(e) {
         this.attrs.d.fx = this.attrs.x;
@@ -134,15 +138,67 @@ function createKNode(d) {
         simulation.alphaTarget(0.3).restart();
     });
     circle.on('click', function () {
+
+      //linkLayer.moveToTop();
+       //this.moveTo(linkLayer);
+      var _click = this;
         console.log('click circle');
         //circle.fill = '#000000';
         //var fill = this.fill() == 'red' ? '#00d00f' : 'red';
         //var fill = ;
-        this.fill('#000000');
+        //this.fill('#000000');
+        clickNodeList.push(this.attrs.d.id);
+        //clickLinkList.push()
+
+        //console.log(nodeLayer);
+        console.log(linkLayer);
+
+        nodeLayer.children.forEach(function (e) {
+         // console.log(clickList)
+
+          if(!clickNodeList.includes(e.attrs.d.id)){
+              e.fill("#eee")
+          }
+          else
+          {
+            e.fill("#ec5148")
+          }
+
+
+         // if (e.attrs.d.id !== _click.attrs.d.id){
+
+
+          //}
+          //console.log(e.attrs.d.id)
+            //console.log(this)
+        });
+        findClickNodeLinks();
+        //console.log(nodeLayer.children);
+        //#eee
         nodeLayer.draw();
     });
 
     nodeLayer.add(circle);
+}
+
+function findClickNodeLinks() {
+
+  //console.log(clickNodeList);
+  linkLayer.children.forEach(function (e) {
+
+      if(clickNodeList.includes(e.attrs.d.source) || clickNodeList.includes(e.attrs.d.target)){
+          e.stroke("#ec5148");
+          nodeLayer.findOne('#' + e.attrs.d.source).fill("#ec5148");
+          nodeLayer.findOne('#' + e.attrs.d.target).fill("#ec5148");
+          //nodeLayer.draw()
+          //console.log(e)
+      }
+      else {
+        e.stroke('#aaa')
+      }
+      linkLayer.draw()
+      //
+  });
 }
 
 function nodeIdentity(d) {
@@ -157,6 +213,8 @@ function linkIdentity(d) {
 }
 
 function createKLink(d) {
+  var m = {"source": d.source.id, "target": d.target.id};
+
     var line = new Konva.Line({
         id: linkIdentity(d),
         points: [
@@ -166,7 +224,8 @@ function createKLink(d) {
         stroke: '#aaa',
         strokeWidth: 1,
         lineCap: 'round',
-        lineJoin: 'round'
+        lineJoin: 'round',
+        d: m
     });
     linkLayer.add(line);
     //nodeLayer.add(line);
