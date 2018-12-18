@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<div id='konva-container'></div>
+<script src="@routes.Assets.versioned("javascripts/d3.min.js")" type="text/javascript"></script>
+<script src="@routes.Assets.versioned("javascripts/konva.min.js")" type="text/javascript"></script>
+<script>
+
+var wheight = window.innerHeight;
+var graphWidth =  window.innerWidth;
+
+var clickNodeList = Array();
+var clickLinkList = Array();
+
+var stage = new Konva.Stage({
+    container: 'konva-container',   // id of container <div>
+    width: graphWidth,
+    height: wheight,
+    draggable: true
+});
+
+//var width = wheight,
+//        height = graphWidth;
+
+
+var linkLayer = new Konva.Layer();
+stage.add(linkLayer);
+var nodeLayer = new Konva.Layer();
+stage.add(nodeLayer);
+var dragLayer = new Konva.Layer();
+stage.add(dragLayer);
+
+var width = stage.attrs.width,
+        height = stage.attrs.height;
+
+//console.log(stage);
+
+//var color = d3.scaleOrdinal(d3.schemeCategory20);
+var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+var transform = d3.zoomIdentity;
+
+var simulation = d3.forceSimulation()
+        .force("link", d3.forceLink().id(function(d) { return d.id; }))
+        .force("charge", d3.forceManyBody())
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+
+d3.json("/names").then(function(graph) {
+
+    simulation
+            .nodes(graph.nodes)
+            .on("tick", ticked);
+
+    simulation.force("link")
+            .links(graph.links);
+
+    /*var zoom = d3.zoom().scaleExtent([1/5, 8])
+            .on("zoom", zoomed);*/
+
+    //console.log(d3.select(nodeLayer));
+
+    var zoom = d3.zoom().scaleExtent([1, 8])
+            .on("zoom", zoomed);
+
+    //d3.select(nodeLayer).call(zoom, zoomed);
+
+
+    function zoomed() {
+
+        transform = d3.event.transform;
+        //simulationUpdate();
+    }
+
+    graph.links.forEach(createKLink);
+    //linkLayer.draw();
+    graph.nodes.forEach(createKNode);
+    nodeLayer.draw();
+
+    //stage.moveTo(nodeLayer);
+
+    function ticked() {
+
+        //console.log(nodeLayer);
+        graph.links.forEach(moveKLink);
+        //linkLayer.draw();
+
+        graph.nodes.forEach(moveKNode);
+        nodeLayer.draw();
+    }
+
+});
+/*
+function dragstarted() {
+    if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+    d3.event.subject.fx = d3.event.subject.x;
+    d3.event.subject.fy = d3.event.subject.y;
+    raise(kNodeFor(d3.event.subject))
+}
+
+function dragged() {
+    d3.event.subject.fx = d3.event.x;
+    d3.event.subject.fy = d3.event.y;
+}
+
+function dragended() {
+    if (!d3.event.active) simulation.alphaTarget(0);
+    d3.event.subject.fx = null;
+    d3.event.subject.fy = null;
+    lower(kNodeFor(d3.event.subject))
+}*/
+
+function createKNode(d) {
+    var circle = new Konva.Circle({
+        id: d.id,
+        x: d.x,
+        y: d.y,
+        radius: 8,
+        fill: color(d.group),
+        stroke:  "#eee",
+        draggable: true,
+        d: d
+    });
+    circle.on('dragstart', function(e) {
+        //this.moveTo(dragLayer);
+        this.attrs.d.fx = this.attrs.d.x;
+        this.attrs.d.fy = this.attrs.d.y;
+        //console.log(clickList)
+    });
+    circle.on('dragmove', function(e) {
+        this.attrs.d.fx = this.attrs.x;
+        this.attrs.d.fy = this.attrs.y;
+    });
+    circle.on('dragend', function(e) {
+        //this.moveTo(nodeLayer);
+        //dragLayer.clear();
+        this.attrs.d.fx = null;
+        this.attrs.d.fy = null;
+        simulation.alphaTarget(0.3).restart();
+    });
+    circle.on('click', function () {
+
+        //linkLayer.moveToTop();
+        //this.moveTo(linkLayer);
+        var _click = this;
+        console.log('click circle');
+        //circle.fill = '#000000';
+        //var fill = this.fill() == 'red' ? '#00d00f' : 'red';
+        //var fill = ;
+        //this.fill('#000000');
+        clickNodeList.push(this.attrs.d.id);
+        //clickLinkList.push()
+
+        //console.log(nodeLayer);
+        console.log(linkLayer);
+
+        nodeLayer.children.forEach(function (e) {
+            // console.log(clickList)
+
+            if(!clickNodeList.includes(e.attrs.d.id)){
+                e.fill("#eee")
+            }
+            else
+            {
+                e.fill("#ec5148")
+            }
+
+
+            // if (e.attrs.d.id !== _click.attrs.d.id){
+
+
+            //}
+            //console.log(e.attrs.d.id)
+            //console.log(this)
+        });
+        findClickNodeLinks();
+        //console.log(nodeLayer.children);
+        //#eee
+        nodeLayer.draw();
+    });
+
+    nodeLayer.add(circle);
+}
+
+function findClickNodeLinks() {
+
+    //console.log(clickNodeList);
+    nodeLayer.children.forEach(function (e) {
+
+        if(clickNodeList.includes(e.attrs.d.source) || clickNodeList.includes(e.attrs.d.target)){
+            e.stroke("#ec5148");
+            nodeLayer.findOne('#' + e.attrs.d.source).fill("#ec5148");
+            nodeLayer.findOne('#' + e.attrs.d.target).fill("#ec5148");
+            //nodeLayer.draw()
+            //console.log(e)
+        }
+        else {
+            e.stroke('#eee')
+        }
+        //linkLayer.draw()
+        //
+    });
+}
+
+function nodeIdentity(d) {
+    return d.id;
+}
+function kNodeFor(d) {
+    return nodeLayer.findOne('#' + d.id);
+}
+
+function linkIdentity(d) {
+    return d.source.id + '_' + d.target.id;
+}
+
+function createKLink(d) {
+    var m = {"source": d.source.id, "target": d.target.id};
+
+    var line = new Konva.Line({
+        id: linkIdentity(d),
+        points: [
+            d.source.x, d.source.y,
+            d.target.x, d.target.y
+        ],
+        stroke: '#aaa',
+        strokeWidth: 1,
+        lineCap: 'round',
+        lineJoin: 'round',
+        d: m
+    });
+    //linkLayer.add(line);
+    nodeLayer.add(line);
+}
+
+function moveKNode(d) {
+    var circle = kNodeFor(d);
+    if (typeof circle !== "undefined")
+    {
+        circle.position({
+            x: d.x,
+            y: d.y
+        });
+    }}
+
+function raise(shape) {
+    console.log('raise', shape);
+    shape.shadowEnabled(true);
+    shape.shadowOffset({x:2,y:2});
+    shape.shadowBlur(2);
+    shape.shadowColor('#aaa');
+}
+
+function lower(shape) {
+    console.log('lower', shape);
+    shape.shadowEnabled(false);
+}
+
+function moveKLink(d) {
+    //var line = linkLayer.findOne('#' + linkIdentity(d));
+    var line = nodeLayer.findOne('#' + linkIdentity(d));
+
+    line.points([
+        d.source.x, d.source.y,
+        d.target.x, d.target.y
+    ])
+}
+var scaleBy = 1.2;
+
+window.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    var oldScale = stage.scaleX();
+
+    var mousePointTo = {
+        x: stage.getPointerPosition().x / oldScale - stage.x() / oldScale,
+        y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale,
+    };
+
+    var newScale = e.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+    stage.scale({ x: newScale, y: newScale });
+
+    var newPos = {
+        x: -(mousePointTo.x - stage.getPointerPosition().x / newScale) * newScale,
+        y: -(mousePointTo.y - stage.getPointerPosition().y / newScale) * newScale
+    };
+    stage.position(newPos);
+    stage.batchDraw();
+});
+
+</script>
